@@ -6,6 +6,8 @@ import java.security.MessageDigest
 
 plugins {
     kotlin("jvm") version "1.2.10"
+    `maven-publish`
+    id("com.jfrog.bintray") version "1.7.3"
 }
 
 val resteasyVersion by extra("3.1.4.Final")
@@ -61,4 +63,35 @@ dependencies {
     testCompile("org.eclipse.jetty:jetty-server:$jettyVersion")
     testCompile("org.eclipse.jetty:jetty-servlet:$jettyVersion")
     testCompile("org.apache.httpcomponents:httpclient:4.5.3")
+}
+
+
+val sourcesJar by tasks.creating(Jar::class) {
+    classifier = "sources"
+    from(java.sourceSets["main"].allSource)
+}
+
+publishing {
+    (publications) {
+        "mavenJava"(MavenPublication::class) {
+            from(components["java"])
+            artifact(sourcesJar)
+        }
+    }
+}
+
+bintray {
+    user = (project.properties["bintray.user"] ?: "").toString()
+    key = (project.properties["bintray.apiKey"] ?: "").toString()
+    publish = true
+    setPublications("mavenJava")
+    pkg.repo = "maven"
+    pkg.name = "kotlin-coroutines-resteasy"
+    pkg.setLicenses("Apache-2.0")
+    pkg.vcsUrl = "https://github.com/araqnid/kotlin-coroutines-resteasy"
+    pkg.desc = "Adapt Resteasy asynchronous requests to Kotlin coroutines"
+    pkg.version.name = gitVersion
+    if (!gitVersion.contains(".g")) {
+        pkg.version.vcsTag = "v" + gitVersion
+    }
 }
