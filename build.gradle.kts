@@ -9,6 +9,7 @@ plugins {
 }
 
 val resteasyVersion by extra("3.1.4.Final")
+val jettyVersion by extra("9.4.8.v20171121")
 
 val gitVersion by extra {
     val capture = ByteArrayOutputStream()
@@ -31,8 +32,8 @@ repositories {
 
 tasks {
     withType<JavaCompile> {
-        sourceCompatibility = "1.7"
-        targetCompatibility = "1.7"
+        sourceCompatibility = "1.8"
+        targetCompatibility = "1.8"
         options.encoding = "UTF-8"
         options.isIncremental = true
         options.isDeprecation = true
@@ -40,7 +41,7 @@ tasks {
 
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         kotlinOptions {
-            jvmTarget = "1.7"
+            jvmTarget = "1.8"
         }
     }
 }
@@ -50,10 +51,14 @@ kotlin {
 }
 
 dependencies {
-    compile("org.jboss.resteasy:resteasy-jaxrs:$resteasyVersion")
+    compile("org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.0_spec:1.0.1.Beta1")
     compile("org.jetbrains.kotlinx:kotlinx-coroutines-core:0.20")
-    compile(kotlin("stdlib-jdk8"))
-    compile(kotlin("reflect"))
+    implementation("org.jboss.resteasy:resteasy-jaxrs:$resteasyVersion")
+    implementation(kotlin("stdlib-jdk8"))
+    implementation(kotlin("reflect"))
     testCompile(kotlin("test-junit"))
     testCompile("org.araqnid:hamkrest-json:1.0.3")
+    testCompile("org.eclipse.jetty:jetty-server:$jettyVersion")
+    testCompile("org.eclipse.jetty:jetty-servlet:$jettyVersion")
+    testCompile("org.apache.httpcomponents:httpclient:4.5.3")
 }
