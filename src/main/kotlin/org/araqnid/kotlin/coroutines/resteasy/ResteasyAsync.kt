@@ -1,42 +1,55 @@
 package org.araqnid.kotlin.coroutines.resteasy
 
 import kotlinx.coroutines.experimental.CoroutineDispatcher
-import kotlinx.coroutines.experimental.newCoroutineContext
+import kotlinx.coroutines.experimental.CoroutineScope
+import kotlinx.coroutines.experimental.DefaultDispatcher
+import kotlinx.coroutines.experimental.Delay
+import kotlinx.coroutines.experimental.Job
+import kotlinx.coroutines.experimental.asCoroutineDispatcher
+import kotlinx.coroutines.experimental.launch
 import org.jboss.resteasy.spi.ResteasyProviderFactory
 import java.util.concurrent.Executor
-import java.util.concurrent.ForkJoinPool
 import javax.ws.rs.container.AsyncResponse
-import kotlin.coroutines.experimental.Continuation
+import kotlin.coroutines.experimental.ContinuationInterceptor
 import kotlin.coroutines.experimental.CoroutineContext
-import kotlin.coroutines.experimental.startCoroutine
 
-class ResteasyAsync<in T>(
-        private val asyncResponse: AsyncResponse,
+internal open class ResteasyInterceptor(
         private val data: Map<Class<*>, Any> = ResteasyProviderFactory.getContextDataMap(),
-        private val executor: Executor
-) : CoroutineDispatcher(), Continuation<T> {
-    override val context: CoroutineContext = newCoroutineContext(this@ResteasyAsync)
-
+        private val nextDispatcher: CoroutineDispatcher
+) : CoroutineDispatcher() {
     override fun dispatch(context: CoroutineContext, block: Runnable) {
-        executor.execute {
+        nextDispatcher.dispatch(context, Runnable {
             ResteasyProviderFactory.pushContextDataMap(data)
             try {
                 block.run()
             } finally {
                 ResteasyProviderFactory.removeContextDataLevel()
             }
-        }
-    }
-
-    override fun resume(value: T) {
-        asyncResponse.resume(if (value == Unit) null else value)
-    }
-
-    override fun resumeWithException(exception: Throwable) {
-        asyncResponse.resume(exception)
+        })
     }
 }
 
-fun <T> respondAsynchronously(asyncResponse: AsyncResponse, executor: Executor = ForkJoinPool.commonPool(), block: suspend () -> T) {
-    block.startCoroutine(ResteasyAsync(asyncResponse, executor = executor))
+internal open class ResteasyInterceptorWithDelay(
+        data: Map<Class<*>, Any> = ResteasyProviderFactory.getContextDataMap(),
+        nextDispatcher: CoroutineDispatcher,
+        private val underlyingDelay: Delay
+) : ResteasyInterceptor(data, nextDispatcher), Delay by underlyingDelay
+
+fun <T> respondAsynchronously(asyncResponse: AsyncResponse, context: CoroutineContext = DefaultDispatcher, block: suspend CoroutineScope.() -> T): Job {
+    val existingInterceptor = context[ContinuationInterceptor]!! as CoroutineDispatcher
+    val resteasyInterceptor = when (existingInterceptor) {
+        is Delay -> ResteasyInterceptorWithDelay(nextDispatcher = existingInterceptor, underlyingDelay = existingInterceptor)
+        else -> ResteasyInterceptor(nextDispatcher = existingInterceptor)
+    }
+    return launch(context + resteasyInterceptor) {
+        try {
+            asyncResponse.resume(block().let { if (it == Unit) null else it })
+        } catch (e: Throwable) {
+            asyncResponse.resume(e)
+        }
+    }
+}
+
+fun <T> respondAsynchronously(asyncResponse: AsyncResponse, executor: Executor, block: suspend CoroutineScope.() -> T): Job {
+    return respondAsynchronously(asyncResponse, executor.asCoroutineDispatcher(), block)
 }
