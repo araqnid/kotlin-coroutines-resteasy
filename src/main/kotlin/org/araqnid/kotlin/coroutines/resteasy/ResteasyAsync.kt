@@ -35,13 +35,13 @@ internal class ResteasyInterceptorWithDelay(
         private val underlyingDelay: Delay
 ) : ResteasyInterceptor(data, nextDispatcher), Delay by underlyingDelay
 
-fun <T> respondAsynchronously(asyncResponse: AsyncResponse, context: CoroutineContext = DefaultDispatcher, block: suspend CoroutineScope.() -> T): Job {
+fun <T> respondAsynchronously(asyncResponse: AsyncResponse, context: CoroutineContext = DefaultDispatcher, parent: Job? = null, block: suspend CoroutineScope.() -> T): Job {
     val existingInterceptor = context[ContinuationInterceptor]!! as CoroutineDispatcher
     val resteasyInterceptor = when (existingInterceptor) {
         is Delay -> ResteasyInterceptorWithDelay(nextDispatcher = existingInterceptor, underlyingDelay = existingInterceptor)
         else -> ResteasyInterceptor(nextDispatcher = existingInterceptor)
     }
-    val job = launch(context + resteasyInterceptor) {
+    val job = launch(context + resteasyInterceptor, parent = parent) {
         try {
             asyncResponse.resume(block().let { if (it == Unit) null else it })
         } catch (e: Throwable) {
@@ -52,6 +52,6 @@ fun <T> respondAsynchronously(asyncResponse: AsyncResponse, context: CoroutineCo
     return job
 }
 
-fun <T> respondAsynchronously(asyncResponse: AsyncResponse, executor: Executor, block: suspend CoroutineScope.() -> T): Job {
-    return respondAsynchronously(asyncResponse, executor.asCoroutineDispatcher(), block)
+fun <T> respondAsynchronously(asyncResponse: AsyncResponse, executor: Executor, parent: Job? = null, block: suspend CoroutineScope.() -> T): Job {
+    return respondAsynchronously(asyncResponse, executor.asCoroutineDispatcher(), parent, block)
 }
