@@ -29,7 +29,7 @@ internal open class ResteasyInterceptor(
     }
 }
 
-internal open class ResteasyInterceptorWithDelay(
+internal class ResteasyInterceptorWithDelay(
         data: Map<Class<*>, Any> = ResteasyProviderFactory.getContextDataMap(),
         nextDispatcher: CoroutineDispatcher,
         private val underlyingDelay: Delay
@@ -41,13 +41,15 @@ fun <T> respondAsynchronously(asyncResponse: AsyncResponse, context: CoroutineCo
         is Delay -> ResteasyInterceptorWithDelay(nextDispatcher = existingInterceptor, underlyingDelay = existingInterceptor)
         else -> ResteasyInterceptor(nextDispatcher = existingInterceptor)
     }
-    return launch(context + resteasyInterceptor) {
+    val job = launch(context + resteasyInterceptor) {
         try {
             asyncResponse.resume(block().let { if (it == Unit) null else it })
         } catch (e: Throwable) {
             asyncResponse.resume(e)
         }
     }
+    asyncResponse.setTimeoutHandler { job.cancel() }
+    return job
 }
 
 fun <T> respondAsynchronously(asyncResponse: AsyncResponse, executor: Executor, block: suspend CoroutineScope.() -> T): Job {

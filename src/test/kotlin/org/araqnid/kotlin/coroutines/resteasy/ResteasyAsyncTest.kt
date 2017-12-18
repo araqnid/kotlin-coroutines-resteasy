@@ -5,6 +5,7 @@ import com.natpryce.hamkrest.and
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.containsSubstring
 import com.natpryce.hamkrest.equalTo
+import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.delay
 import org.apache.http.HttpResponse
 import org.apache.http.client.methods.HttpGet
@@ -12,7 +13,11 @@ import org.apache.http.entity.ContentType
 import org.apache.http.util.EntityUtils
 import org.jboss.resteasy.spi.ResteasyProviderFactory
 import org.junit.Test
+import java.time.Duration
+import java.util.concurrent.BlockingQueue
 import java.util.concurrent.Executor
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
 import javax.ws.rs.BadRequestException
 import javax.ws.rs.GET
 import javax.ws.rs.Path
@@ -72,6 +77,18 @@ class ResteasyAsyncTest {
             }
         }
     }
+
+    @Test
+    fun `coroutine cancelled after timeout`() {
+        val resource = ResourceWithSlowMethod()
+        withServer(resource) {
+            httpClient.execute(HttpGet("/slow")).use { response ->
+                assertThat(response.statusLine.statusCode, equalTo(503))
+            }
+        }
+        val job = resource.jobs.take()
+        assertThat(job, Matcher(Job::isCancelled))
+    }
 }
 
 fun HttpResponse.isOk(): Boolean = statusLine.statusCode in 200..299
@@ -128,8 +145,29 @@ class ResourceWithThreadPool(private val threadPool: Executor) {
     @GET
     @Produces("text/plain")
     fun testResource(@Suspended asyncResponse: AsyncResponse) {
-        respondAsynchronously(asyncResponse, executor = threadPool) {
+        val job = respondAsynchronously(asyncResponse, executor = threadPool) {
             "responding on ${Thread.currentThread().name}"
         }
     }
 }
+
+@Path("/")
+class ResourceWithSlowMethod() {
+    val jobs: BlockingQueue<Job> = LinkedBlockingQueue()
+
+    @GET
+    @Path("slow")
+    @Produces("text/plain")
+    fun respondSlowly(@Suspended asyncResponse: AsyncResponse) {
+        val baseline = Duration.ofMillis(500)
+        asyncResponse.setTimeout(baseline)
+        val job = respondAsynchronously(asyncResponse) {
+            delay(baseline * 3)
+        }
+        jobs += job
+    }
+}
+
+private fun AsyncResponse.setTimeout(duration: Duration) = setTimeout(duration.toNanos(), TimeUnit.NANOSECONDS)
+private suspend fun delay(duration: Duration) = delay(duration.toNanos(), TimeUnit.NANOSECONDS)
+private operator fun Duration.times(n: Int) = Duration.ofNanos(toNanos() * n)
