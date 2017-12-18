@@ -145,7 +145,7 @@ class ResourceWithThreadPool(private val threadPool: Executor) {
     @GET
     @Produces("text/plain")
     fun testResource(@Suspended asyncResponse: AsyncResponse) {
-        val job = respondAsynchronously(asyncResponse, executor = threadPool) {
+        respondAsynchronously(asyncResponse, executor = threadPool) {
             "responding on ${Thread.currentThread().name}"
         }
     }
