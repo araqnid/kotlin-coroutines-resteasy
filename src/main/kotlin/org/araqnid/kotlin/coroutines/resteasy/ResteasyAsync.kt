@@ -32,24 +32,27 @@ internal open class ResteasyInterceptor(
 internal class ResteasyInterceptorWithDelay(
         data: Map<Class<*>, Any> = ResteasyProviderFactory.getContextDataMap(),
         nextDispatcher: CoroutineDispatcher,
-        private val underlyingDelay: Delay
+        underlyingDelay: Delay
 ) : ResteasyInterceptor(data, nextDispatcher), Delay by underlyingDelay
 
 fun <T> respondAsynchronously(asyncResponse: AsyncResponse, context: CoroutineContext = DefaultDispatcher, parent: Job? = null, block: suspend CoroutineScope.() -> T): Job {
-    val existingInterceptor = context[ContinuationInterceptor]!! as CoroutineDispatcher
-    val resteasyInterceptor = when (existingInterceptor) {
-        is Delay -> ResteasyInterceptorWithDelay(nextDispatcher = existingInterceptor, underlyingDelay = existingInterceptor)
-        else -> ResteasyInterceptor(nextDispatcher = existingInterceptor)
-    }
-    val job = launch(context + resteasyInterceptor, parent = parent) {
+    return launch(createContext(context), parent = parent) {
         try {
             asyncResponse.resume(block().let { if (it == Unit) null else it })
         } catch (e: Throwable) {
             asyncResponse.resume(e)
         }
+    }.also { asyncResponse.setTimeoutHandler { it.cancel() } }
+}
+
+private fun createContext(parentContext: CoroutineContext): CoroutineContext {
+    val existingInterceptor = parentContext[ContinuationInterceptor]!! as CoroutineDispatcher
+    val resteasyInterceptor = when (existingInterceptor) {
+        is Delay -> ResteasyInterceptorWithDelay(nextDispatcher = existingInterceptor,
+                underlyingDelay = existingInterceptor)
+        else -> ResteasyInterceptor(nextDispatcher = existingInterceptor)
     }
-    asyncResponse.setTimeoutHandler { job.cancel() }
-    return job
+    return parentContext + resteasyInterceptor
 }
 
 fun <T> respondAsynchronously(asyncResponse: AsyncResponse, executor: Executor, parent: Job? = null, block: suspend CoroutineScope.() -> T): Job {
