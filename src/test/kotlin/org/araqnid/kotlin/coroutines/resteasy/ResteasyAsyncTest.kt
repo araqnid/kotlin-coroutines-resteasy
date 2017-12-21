@@ -152,7 +152,7 @@ class ResourceWithThreadPool(private val threadPool: Executor) {
 }
 
 @Path("/")
-class ResourceWithSlowMethod() {
+class ResourceWithSlowMethod {
     val jobs: BlockingQueue<Job> = LinkedBlockingQueue()
 
     @GET
