@@ -42,7 +42,9 @@ fun <T> respondAsynchronously(asyncResponse: AsyncResponse, context: CoroutineCo
         } catch (e: Throwable) {
             asyncResponse.resume(e)
         }
-    }.also { asyncResponse.setTimeoutHandler { it.cancel() } }
+    }.also { job ->
+        asyncResponse.setTimeoutHandler { job.cancel() }
+    }
 }
 
 private fun createContext(parentContext: CoroutineContext): CoroutineContext {
