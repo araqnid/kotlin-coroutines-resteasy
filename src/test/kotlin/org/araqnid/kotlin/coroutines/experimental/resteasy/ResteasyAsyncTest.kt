@@ -1,4 +1,4 @@
-package org.araqnid.kotlin.coroutines.resteasy
+package org.araqnid.kotlin.coroutines.experimental.resteasy
 
 import com.natpryce.hamkrest.Matcher
 import com.natpryce.hamkrest.and
@@ -70,7 +70,8 @@ class ResteasyAsyncTest {
         val threadPool = Executor { command ->
             Thread(command, "TestServerWorker").start()
         }
-        withServer(ResourceWithThreadPool(threadPool)) {
+        withServer(ResourceWithThreadPool(
+                threadPool)) {
             httpClient.execute(HttpGet("/")).use { response ->
                 assertThat(response, Matcher(HttpResponse::isOk) and Matcher(HttpResponse::contentTypeIs, "text/plain"))
                 assertThat(response.bodyText(), containsSubstring("TestServerWorker"))
@@ -145,7 +146,8 @@ class ResourceWithThreadPool(private val threadPool: Executor) {
     @GET
     @Produces("text/plain")
     fun testResource(@Suspended asyncResponse: AsyncResponse) {
-        respondAsynchronously(asyncResponse, executor = threadPool) {
+        respondAsynchronously(asyncResponse,
+                executor = threadPool) {
             "responding on ${Thread.currentThread().name}"
         }
     }

@@ -1,4 +1,4 @@
-package org.araqnid.kotlin.coroutines.resteasy
+package org.araqnid.kotlin.coroutines.experimental.resteasy
 
 import kotlinx.coroutines.experimental.CoroutineDispatcher
 import kotlinx.coroutines.experimental.CoroutineScope
@@ -58,5 +58,8 @@ private fun createContext(parentContext: CoroutineContext): CoroutineContext {
 }
 
 fun <T> respondAsynchronously(asyncResponse: AsyncResponse, executor: Executor, parent: Job? = null, block: suspend CoroutineScope.() -> T): Job {
-    return respondAsynchronously(asyncResponse, executor.asCoroutineDispatcher(), parent, block)
+    return respondAsynchronously(asyncResponse,
+            executor.asCoroutineDispatcher(),
+            parent,
+            block)
 }

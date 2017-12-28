@@ -1,4 +1,4 @@
-package org.araqnid.kotlin.coroutines.resteasy
+package org.araqnid.kotlin.coroutines.experimental.resteasy
 
 import org.apache.http.HttpHost
 import org.apache.http.client.HttpClient
@@ -52,7 +52,8 @@ fun <T> withServer(vararg jaxrsResources: Any, block: ServerScope.() -> T): T {
                     HttpRoute(host)
                 }
                 .build().use { httpClient ->
-            return block(ServerScope(URI("http://localhost:$port/"), httpClient))
+            return block(ServerScope(URI("http://localhost:$port/"),
+                    httpClient))
         }
     } finally {
         server.stop()
