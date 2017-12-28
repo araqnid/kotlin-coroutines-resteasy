@@ -7,6 +7,7 @@ import java.security.MessageDigest
 plugins {
     kotlin("jvm") version "1.2.10"
     `maven-publish`
+    `java-library`
     id("com.jfrog.bintray") version "1.7.3"
 }
 
@@ -53,8 +54,8 @@ kotlin {
 }
 
 dependencies {
-    compile("org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.0_spec:1.0.1.Beta1")
-    compile("org.jetbrains.kotlinx:kotlinx-coroutines-core:0.20")
+    api("org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.0_spec:1.0.1.Beta1")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:0.20")
     implementation("org.jboss.resteasy:resteasy-jaxrs:$resteasyVersion")
     implementation(kotlin("stdlib-jdk8", "1.2.10"))
     implementation(kotlin("reflect", "1.2.10"))
