@@ -2,8 +2,8 @@ package org.araqnid.kotlin.coroutines.experimental.resteasy
 
 import kotlinx.coroutines.experimental.CoroutineDispatcher
 import kotlinx.coroutines.experimental.CoroutineScope
-import kotlinx.coroutines.experimental.DefaultDispatcher
 import kotlinx.coroutines.experimental.Delay
+import kotlinx.coroutines.experimental.Dispatchers
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.asCoroutineDispatcher
 import kotlinx.coroutines.experimental.launch
@@ -35,8 +35,8 @@ internal class ResteasyInterceptorWithDelay(
         underlyingDelay: Delay
 ) : ResteasyInterceptor(data, nextDispatcher), Delay by underlyingDelay
 
-fun <T> respondAsynchronously(asyncResponse: AsyncResponse, context: CoroutineContext = DefaultDispatcher, parent: Job? = null, block: suspend CoroutineScope.() -> T): Job {
-    return launch(createContext(context), parent = parent) {
+fun <T> CoroutineScope.respondAsynchronously(asyncResponse: AsyncResponse, context: CoroutineContext = Dispatchers.Default, block: suspend CoroutineScope.() -> T): Job {
+    return this@respondAsynchronously.launch(createContext(context)) {
         try {
             asyncResponse.resume(block().let { if (it == Unit) null else it })
         } catch (e: Throwable) {
@@ -57,9 +57,8 @@ private fun createContext(parentContext: CoroutineContext): CoroutineContext {
     return parentContext + resteasyInterceptor
 }
 
-fun <T> respondAsynchronously(asyncResponse: AsyncResponse, executor: Executor, parent: Job? = null, block: suspend CoroutineScope.() -> T): Job {
+fun <T> CoroutineScope.respondAsynchronously(asyncResponse: AsyncResponse, executor: Executor, block: suspend CoroutineScope.() -> T): Job {
     return respondAsynchronously(asyncResponse,
             executor.asCoroutineDispatcher(),
-            parent,
             block)
 }

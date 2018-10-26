@@ -1,7 +1,7 @@
 Resteasy coroutine adapter
 ==========================
 
-[ ![Build Status](https://travis-ci.org/araqnid/kotlin-coroutines-resteasy.svg?branch=master)](https://travis-ci.org/araqnid/kotlin-coroutines-resteasy) [ ![Download](https://api.bintray.com/packages/araqnid/maven/kotlin-coroutines-resteasy/images/download.svg) ](https://bintray.com/araqnid/maven/kotlin-coroutines-resteasy/_latestVersion) [ ![Kotlin](https://img.shields.io/badge/kotlin-1.2.10-blue.svg)](http://kotlinlang.org)
+[ ![Build Status](https://travis-ci.org/araqnid/kotlin-coroutines-resteasy.svg?branch=master)](https://travis-ci.org/araqnid/kotlin-coroutines-resteasy) [ ![Download](https://api.bintray.com/packages/araqnid/maven/kotlin-coroutines-resteasy/images/download.svg) ](https://bintray.com/araqnid/maven/kotlin-coroutines-resteasy/_latestVersion) [ ![Kotlin](https://img.shields.io/badge/kotlin-1.2.71-blue.svg)](http://kotlinlang.org)
 
 This allows responding to requests from a Kotlin coroutine, using Resteasy's
 (actually JAX-RS's) AsyncResponse support. What is Resteasy-specific is that

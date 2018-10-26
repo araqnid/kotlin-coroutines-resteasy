@@ -5,6 +5,7 @@ import com.natpryce.hamkrest.and
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.containsSubstring
 import com.natpryce.hamkrest.equalTo
+import kotlinx.coroutines.experimental.GlobalScope
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.delay
 import org.apache.http.HttpResponse
@@ -104,7 +105,7 @@ object SimpleResource {
     @GET
     @Produces("text/plain")
     fun respond(@Suspended asyncResponse: AsyncResponse) {
-        respondAsynchronously(asyncResponse) {
+        GlobalScope.respondAsynchronously(asyncResponse) {
             delay(50)
             "hello world"
         }
@@ -113,7 +114,7 @@ object SimpleResource {
     @GET
     @Path("generate_204")
     fun responseWithNoContent(@Suspended asyncResponse: AsyncResponse) {
-        respondAsynchronously(asyncResponse) {
+        GlobalScope.respondAsynchronously(asyncResponse) {
             delay(50)
         }
     }
@@ -122,7 +123,7 @@ object SimpleResource {
     @Path("generate_400")
     @Produces("text/plain")
     fun respondWithException(@Suspended asyncResponse: AsyncResponse) {
-        respondAsynchronously(asyncResponse) {
+        GlobalScope.respondAsynchronously(asyncResponse) {
             throw BadRequestException()
         }
     }
@@ -131,7 +132,7 @@ object SimpleResource {
     @Path("using_context_data")
     @Produces("text/plain")
     fun respondUsingContextData(@Suspended asyncResponse: AsyncResponse) {
-        respondAsynchronously(asyncResponse) {
+        GlobalScope.respondAsynchronously(asyncResponse) {
             "baseUri=${resteasyContextData<UriInfo>().baseUri}"
         }
     }
@@ -146,7 +147,7 @@ class ResourceWithThreadPool(private val threadPool: Executor) {
     @GET
     @Produces("text/plain")
     fun testResource(@Suspended asyncResponse: AsyncResponse) {
-        respondAsynchronously(asyncResponse,
+        GlobalScope.respondAsynchronously(asyncResponse,
                 executor = threadPool) {
             "responding on ${Thread.currentThread().name}"
         }
@@ -163,7 +164,7 @@ class ResourceWithSlowMethod {
     fun respondSlowly(@Suspended asyncResponse: AsyncResponse) {
         val baseline = Duration.ofMillis(500)
         asyncResponse.setTimeout(baseline)
-        val job = respondAsynchronously(asyncResponse) {
+        val job = GlobalScope.respondAsynchronously(asyncResponse) {
             delay(baseline * 3)
         }
         jobs += job
@@ -171,5 +172,5 @@ class ResourceWithSlowMethod {
 }
 
 private fun AsyncResponse.setTimeout(duration: Duration) = setTimeout(duration.toNanos(), TimeUnit.NANOSECONDS)
-private suspend fun delay(duration: Duration) = delay(duration.toNanos(), TimeUnit.NANOSECONDS)
+private suspend fun delay(duration: Duration) = delay(duration.toMillis())
 private operator fun Duration.times(n: Int) = Duration.ofNanos(toNanos() * n)
