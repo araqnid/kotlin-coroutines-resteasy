@@ -74,7 +74,7 @@ val sourcesJar by tasks.creating(Jar::class) {
 
 publishing {
     publications {
-        register<MavenPublication>("mavenJava") {
+        create<MavenPublication>("mavenJava") {
             from(components["java"])
             artifact(sourcesJar)
         }
