@@ -8,7 +8,7 @@ plugins {
     kotlin("jvm") version "1.2.71"
     `maven-publish`
     `java-library`
-    id("com.jfrog.bintray") version "1.7.3"
+    id("com.jfrog.bintray") version "1.8.4"
 }
 
 val resteasyVersion by extra("3.1.4.Final")
