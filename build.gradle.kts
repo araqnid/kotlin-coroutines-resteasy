@@ -69,12 +69,12 @@ dependencies {
 
 val sourcesJar by tasks.creating(Jar::class) {
     classifier = "sources"
-    from(java.sourceSets["main"].allSource)
+    from(sourceSets["main"].allSource)
 }
 
 publishing {
-    (publications) {
-        "mavenJava"(MavenPublication::class) {
+    publications {
+        register<MavenPublication>("mavenJava") {
             from(components["java"])
             artifact(sourcesJar)
         }
