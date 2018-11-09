@@ -5,8 +5,10 @@ import com.natpryce.hamkrest.and
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.containsSubstring
 import com.natpryce.hamkrest.equalTo
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.delay
 import org.apache.http.HttpResponse
 import org.apache.http.client.methods.HttpGet
@@ -26,6 +28,7 @@ import javax.ws.rs.Produces
 import javax.ws.rs.container.AsyncResponse
 import javax.ws.rs.container.Suspended
 import javax.ws.rs.core.UriInfo
+import kotlin.coroutines.CoroutineContext
 
 class ResteasyAsyncTest {
     @Test
@@ -71,8 +74,7 @@ class ResteasyAsyncTest {
         val threadPool = Executor { command ->
             Thread(command, "TestServerWorker").start()
         }
-        withServer(ResourceWithThreadPool(
-                threadPool)) {
+        withServer(ResourceWithThreadPool(threadPool)) {
             httpClient.execute(HttpGet("/")).use { response ->
                 assertThat(response, Matcher(HttpResponse::isOk) and Matcher(HttpResponse::contentTypeIs, "text/plain"))
                 assertThat(response.bodyText(), containsSubstring("TestServerWorker"))
@@ -144,11 +146,15 @@ object SimpleResource {
 
 @Path("/")
 class ResourceWithThreadPool(private val threadPool: Executor) {
+    private val coroutineScope = object : CoroutineScope {
+        override val coroutineContext: CoroutineContext
+            get() = threadPool.asCoroutineDispatcher()
+    }
+
     @GET
     @Produces("text/plain")
     fun testResource(@Suspended asyncResponse: AsyncResponse) {
-        GlobalScope.respondAsynchronously(asyncResponse,
-                executor = threadPool) {
+        coroutineScope.respondAsynchronously(asyncResponse) {
             "responding on ${Thread.currentThread().name}"
         }
     }

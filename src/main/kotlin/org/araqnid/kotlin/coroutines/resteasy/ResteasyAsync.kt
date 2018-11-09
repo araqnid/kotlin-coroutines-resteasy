@@ -8,10 +8,8 @@ import kotlinx.coroutines.Delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
 import org.jboss.resteasy.spi.ResteasyProviderFactory
-import java.util.concurrent.Executor
 import javax.ws.rs.container.AsyncResponse
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.CoroutineContext
@@ -38,8 +36,8 @@ internal class ResteasyInterceptorWithDelay(
         underlyingDelay: Delay
 ) : ResteasyInterceptor(data, nextDispatcher), Delay by underlyingDelay
 
-fun <T> CoroutineScope.respondAsynchronously(asyncResponse: AsyncResponse, context: CoroutineContext = Dispatchers.Default, block: suspend CoroutineScope.() -> T): Job {
-    return this@respondAsynchronously.launch(createContext(context)) {
+fun <T> CoroutineScope.respondAsynchronously(asyncResponse: AsyncResponse, block: suspend CoroutineScope.() -> T): Job {
+    return this@respondAsynchronously.launch(createContext(coroutineContext)) {
         try {
             asyncResponse.resume(block().let { if (it == Unit) null else it })
         } catch (e: Throwable) {
@@ -51,17 +49,11 @@ fun <T> CoroutineScope.respondAsynchronously(asyncResponse: AsyncResponse, conte
 }
 
 private fun createContext(parentContext: CoroutineContext): CoroutineContext {
-    val existingInterceptor = parentContext[ContinuationInterceptor]!! as CoroutineDispatcher
+    val existingInterceptor = (parentContext[ContinuationInterceptor] as CoroutineDispatcher?) ?: Dispatchers.Default
     val resteasyInterceptor = when (existingInterceptor) {
         is Delay -> ResteasyInterceptorWithDelay(nextDispatcher = existingInterceptor,
                 underlyingDelay = existingInterceptor)
         else -> ResteasyInterceptor(nextDispatcher = existingInterceptor)
     }
     return parentContext + resteasyInterceptor
-}
-
-fun <T> CoroutineScope.respondAsynchronously(asyncResponse: AsyncResponse, executor: Executor, block: suspend CoroutineScope.() -> T): Job {
-    return respondAsynchronously(asyncResponse,
-            executor.asCoroutineDispatcher(),
-            block)
 }
