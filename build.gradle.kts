@@ -5,7 +5,7 @@ import java.io.ByteArrayOutputStream
 import java.security.MessageDigest
 
 plugins {
-    kotlin("jvm") version "1.2.71"
+    kotlin("jvm") version "1.3.0"
     `maven-publish`
     `java-library`
     id("com.jfrog.bintray") version "1.8.4"
@@ -49,17 +49,13 @@ tasks {
     }
 }
 
-kotlin {
-    experimental.coroutines = Coroutines.ENABLE
-}
-
 dependencies {
     api("org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.0_spec:1.0.1.Beta1")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:0.30.2")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.0.1")
     implementation("org.jboss.resteasy:resteasy-jaxrs:$resteasyVersion")
-    implementation(kotlin("stdlib-jdk8", "1.2.71"))
-    implementation(kotlin("reflect", "1.2.71"))
-    testCompile(kotlin("test-junit", "1.2.71"))
+    implementation(kotlin("stdlib-jdk8", "1.3.0"))
+    implementation(kotlin("reflect", "1.3.0"))
+    testCompile(kotlin("test-junit", "1.3.0"))
     testCompile("org.araqnid:hamkrest-json:1.0.3")
     testCompile("org.eclipse.jetty:jetty-server:$jettyVersion")
     testCompile("org.eclipse.jetty:jetty-servlet:$jettyVersion")

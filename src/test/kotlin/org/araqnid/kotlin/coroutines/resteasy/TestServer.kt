@@ -1,9 +1,7 @@
-package org.araqnid.kotlin.coroutines.experimental.resteasy
+package org.araqnid.kotlin.coroutines.resteasy
 
 import org.apache.http.HttpHost
-import org.apache.http.client.HttpClient
 import org.apache.http.conn.routing.HttpRoute
-import org.apache.http.conn.routing.HttpRoutePlanner
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClients
 import org.eclipse.jetty.server.NetworkConnector
@@ -16,7 +14,7 @@ import org.jboss.resteasy.plugins.server.servlet.Filter30Dispatcher
 import org.jboss.resteasy.plugins.server.servlet.ResteasyBootstrap
 import org.jboss.resteasy.spi.ResteasyDeployment
 import java.net.URI
-import java.util.*
+import java.util.EnumSet
 import javax.servlet.DispatcherType
 import javax.servlet.ServletContextEvent
 

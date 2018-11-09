@@ -1,17 +1,20 @@
-package org.araqnid.kotlin.coroutines.experimental.resteasy
+@file:UseExperimental(InternalCoroutinesApi::class)
 
-import kotlinx.coroutines.experimental.CoroutineDispatcher
-import kotlinx.coroutines.experimental.CoroutineScope
-import kotlinx.coroutines.experimental.Delay
-import kotlinx.coroutines.experimental.Dispatchers
-import kotlinx.coroutines.experimental.Job
-import kotlinx.coroutines.experimental.asCoroutineDispatcher
-import kotlinx.coroutines.experimental.launch
+package org.araqnid.kotlin.coroutines.resteasy
+
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.launch
 import org.jboss.resteasy.spi.ResteasyProviderFactory
 import java.util.concurrent.Executor
 import javax.ws.rs.container.AsyncResponse
-import kotlin.coroutines.experimental.ContinuationInterceptor
-import kotlin.coroutines.experimental.CoroutineContext
+import kotlin.coroutines.ContinuationInterceptor
+import kotlin.coroutines.CoroutineContext
 
 internal open class ResteasyInterceptor(
         private val data: Map<Class<*>, Any> = ResteasyProviderFactory.getContextDataMap(),
