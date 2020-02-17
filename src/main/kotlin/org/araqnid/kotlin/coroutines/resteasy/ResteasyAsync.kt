@@ -6,7 +6,9 @@ import kotlinx.coroutines.launch
 import javax.ws.rs.container.AsyncResponse
 import kotlin.coroutines.CoroutineContext
 
-fun <T> CoroutineScope.respondAsynchronously(asyncResponse: AsyncResponse, context: CoroutineContext = coroutineContext, block: suspend CoroutineScope.() -> T): Job {
+fun <T> CoroutineScope.respondAsynchronously(asyncResponse: AsyncResponse,
+                                             context: CoroutineContext = coroutineContext,
+                                             block: suspend CoroutineScope.() -> T): Job {
     return launch(context + ResteasyContext()) {
         try {
             asyncResponse.resume(block().takeUnless { it == Unit })
