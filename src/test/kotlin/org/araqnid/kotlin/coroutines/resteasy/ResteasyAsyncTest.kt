@@ -5,6 +5,7 @@ import com.natpryce.hamkrest.and
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.containsSubstring
 import com.natpryce.hamkrest.equalTo
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
@@ -93,11 +94,21 @@ class ResteasyAsyncTest {
         val job = resource.jobs.take()
         assertThat(job, Matcher(Job::isCancelled))
     }
+
+    @Test
+    fun `can specify additional coroutine context when responding`() {
+        withServer(SimpleResource) {
+            httpClient.execute(HttpGet("/specifying_coroutine_context")).use { response ->
+                assertThat(response, Matcher(HttpResponse::isOk) and Matcher(HttpResponse::contentTypeIs, "text/plain"))
+                assertThat(response.bodyText(), equalTo("CoroutineName=CoroutineName(test)"))
+            }
+        }
+    }
 }
 
-fun HttpResponse.isOk(): Boolean = statusLine.statusCode in 200..299
-fun HttpResponse.bodyText(): String = EntityUtils.toString(entity)
-fun HttpResponse.contentTypeIs(mimeType: String): Boolean {
+private fun HttpResponse.isOk(): Boolean = statusLine.statusCode in 200..299
+private fun HttpResponse.bodyText(): String = EntityUtils.toString(entity)
+private fun HttpResponse.contentTypeIs(mimeType: String): Boolean {
     val contentType = ContentType.get(entity)
     return contentType != null && contentType.mimeType.equals(mimeType, ignoreCase = true)
 }
@@ -136,6 +147,15 @@ object SimpleResource {
     fun respondUsingContextData(@Suspended asyncResponse: AsyncResponse) {
         GlobalScope.respondAsynchronously(asyncResponse) {
             "baseUri=${resteasyContextData<UriInfo>().baseUri}"
+        }
+    }
+
+    @GET
+    @Path("specifying_coroutine_context")
+    @Produces("text/plain")
+    fun respondUsingSpecifiedCoroutineContext(@Suspended asyncResponse: AsyncResponse) {
+        GlobalScope.respondAsynchronously(asyncResponse, context = CoroutineName("test")) {
+            "CoroutineName=${coroutineContext[CoroutineName]}"
         }
     }
 

@@ -4,11 +4,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import javax.ws.rs.container.AsyncResponse
+import kotlin.coroutines.CoroutineContext
 
-fun <T> CoroutineScope.respondAsynchronously(asyncResponse: AsyncResponse, block: suspend CoroutineScope.() -> T): Job {
-    return this@respondAsynchronously.launch(coroutineContext + ResteasyContext()) {
+fun <T> CoroutineScope.respondAsynchronously(asyncResponse: AsyncResponse, context: CoroutineContext = coroutineContext, block: suspend CoroutineScope.() -> T): Job {
+    return launch(context + ResteasyContext()) {
         try {
-            asyncResponse.resume(block().let { if (it == Unit) null else it })
+            asyncResponse.resume(block().takeUnless { it == Unit })
         } catch (e: Throwable) {
             asyncResponse.resume(e)
         }
