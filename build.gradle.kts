@@ -1,42 +1,29 @@
-import org.gradle.kotlin.dsl.get
-import org.jetbrains.kotlin.daemon.common.toHexString
-import org.jetbrains.kotlin.gradle.dsl.Coroutines
-import java.io.ByteArrayOutputStream
-import java.security.MessageDigest
-
 plugins {
-    kotlin("jvm") version "1.3.0"
+    kotlin("jvm") version "1.3.61"
     `maven-publish`
     `java-library`
     id("com.jfrog.bintray") version "1.8.4"
 }
 
-val resteasyVersion by extra("3.1.4.Final")
-val jettyVersion by extra("9.4.8.v20171121")
-
-val gitVersion by extra {
-    val capture = ByteArrayOutputStream()
-    project.exec {
-        commandLine("git", "describe", "--tags", "--always")
-        standardOutput = capture
-    }
-    String(capture.toByteArray())
-            .trim()
-            .removePrefix("v")
-            .replace('-', '.')
-}
+val buildNumber: String? = System.getenv("BUILD_NUMBER")
+val versionPrefix = "1.1"
 
 group = "org.araqnid"
-version = gitVersion
+
+if (buildNumber != null)
+    version = "${versionPrefix}.${buildNumber}"
 
 repositories {
     jcenter()
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
 tasks {
     withType<JavaCompile> {
-        sourceCompatibility = "1.8"
-        targetCompatibility = "1.8"
         options.encoding = "UTF-8"
         options.isIncremental = true
         options.isDeprecation = true
@@ -51,28 +38,24 @@ tasks {
 
 dependencies {
     api("org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.0_spec:1.0.1.Beta1")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.0.1")
-    implementation("org.jboss.resteasy:resteasy-jaxrs:$resteasyVersion")
-    implementation(kotlin("stdlib-jdk8", "1.3.0"))
-    implementation(kotlin("reflect", "1.3.0"))
-    testCompile(kotlin("test-junit", "1.3.0"))
-    testCompile("org.araqnid:hamkrest-json:1.0.3")
-    testCompile("org.eclipse.jetty:jetty-server:$jettyVersion")
-    testCompile("org.eclipse.jetty:jetty-servlet:$jettyVersion")
-    testCompile("org.apache.httpcomponents:httpclient:4.5.3")
-}
-
-
-val sourcesJar by tasks.creating(Jar::class) {
-    classifier = "sources"
-    from(sourceSets["main"].allSource)
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${LibraryVersions.kotlinCoroutines}")
+    implementation("org.jboss.resteasy:resteasy-jaxrs:${LibraryVersions.resteasy}")
+    implementation(kotlin("stdlib-jdk8"))
+    implementation(kotlin("reflect"))
+    testImplementation(kotlin("test-junit"))
+    testImplementation("org.araqnid:hamkrest-json:1.0.3")
+    testImplementation("org.eclipse.jetty:jetty-server:${LibraryVersions.jetty}")
+    testImplementation("org.eclipse.jetty:jetty-servlet:${LibraryVersions.jetty}")
+    testImplementation("org.apache.httpcomponents:httpclient:4.5.3")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${LibraryVersions.kotlinCoroutines}")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:${LibraryVersions.kotlinCoroutines}")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${LibraryVersions.kotlinCoroutines}")
 }
 
 publishing {
     publications {
         create<MavenPublication>("mavenJava") {
             from(components["java"])
-            artifact(sourcesJar)
         }
     }
 }
@@ -87,8 +70,8 @@ bintray {
     pkg.setLicenses("Apache-2.0")
     pkg.vcsUrl = "https://github.com/araqnid/kotlin-coroutines-resteasy"
     pkg.desc = "Adapt Resteasy asynchronous requests to Kotlin coroutines"
-    pkg.version.name = gitVersion
-    if (!gitVersion.contains(".g")) {
-        pkg.version.vcsTag = "v" + gitVersion
+    if (project.version != Project.DEFAULT_VERSION) {
+        pkg.version.name = project.version.toString()
+        pkg.version.vcsTag = "v" + project.version
     }
 }
