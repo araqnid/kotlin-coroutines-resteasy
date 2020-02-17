@@ -6,7 +6,7 @@ plugins {
 }
 
 val buildNumber: String? = System.getenv("BUILD_NUMBER")
-val versionPrefix = "1.1"
+val versionPrefix = "1.4"
 
 group = "org.araqnid"
 
