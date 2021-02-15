@@ -1,7 +1,7 @@
 Resteasy coroutine adapter
 ==========================
 
-[ ![Kotlin](https://img.shields.io/badge/kotlin-1.3.61-blue.svg)](http://kotlinlang.org)
+[ ![Kotlin](https://img.shields.io/badge/kotlin-1.4.30-blue.svg)](http://kotlinlang.org)
 
 This allows responding to requests from a Kotlin coroutine, using Resteasy's
 (actually JAX-RS's) AsyncResponse support. What is Resteasy-specific is that
