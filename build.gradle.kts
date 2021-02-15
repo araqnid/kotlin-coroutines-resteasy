@@ -14,6 +14,15 @@ if (buildNumber != null)
 
 repositories {
     mavenCentral()
+
+    if (isGithubUserAvailable(project)) {
+        for (repo in listOf("assert-that")) {
+            maven(url = "https://maven.pkg.github.com/araqnid/$repo") {
+                name = "github-$repo"
+                credentials(githubUserCredentials(project))
+            }
+        }
+    }
 }
 
 java {
@@ -43,19 +52,28 @@ dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation(kotlin("reflect"))
     testImplementation(kotlin("test-junit"))
-    testImplementation("org.araqnid:hamkrest-json:1.0.3")
     testImplementation("org.eclipse.jetty:jetty-server:${LibraryVersions.jetty}")
     testImplementation("org.eclipse.jetty:jetty-servlet:${LibraryVersions.jetty}")
     testImplementation("org.apache.httpcomponents:httpclient:4.5.3")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${LibraryVersions.kotlinCoroutines}")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:${LibraryVersions.kotlinCoroutines}")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${LibraryVersions.kotlinCoroutines}")
+    testImplementation("org.araqnid.kotlin.assert-that:assert-that:${LibraryVersions.assertThat}")
 }
 
 publishing {
     publications {
         create<MavenPublication>("mavenJava") {
             from(components["java"])
+        }
+    }
+
+    repositories {
+        if (isGithubUserAvailable(project)) {
+            maven(url = "https://maven.pkg.github.com/araqnid/kotlin-coroutines-resteasy") {
+                name = "github"
+                credentials(githubUserCredentials(project))
+            }
         }
     }
 }

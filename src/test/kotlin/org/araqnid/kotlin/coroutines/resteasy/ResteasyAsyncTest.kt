@@ -1,10 +1,5 @@
 package org.araqnid.kotlin.coroutines.resteasy
 
-import com.natpryce.hamkrest.Matcher
-import com.natpryce.hamkrest.and
-import com.natpryce.hamkrest.assertion.assertThat
-import com.natpryce.hamkrest.containsSubstring
-import com.natpryce.hamkrest.equalTo
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
@@ -15,6 +10,11 @@ import org.apache.http.HttpResponse
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.entity.ContentType
 import org.apache.http.util.EntityUtils
+import org.araqnid.kotlin.assertthat.Matcher
+import org.araqnid.kotlin.assertthat.and
+import org.araqnid.kotlin.assertthat.assertThat
+import org.araqnid.kotlin.assertthat.containsSubstring
+import org.araqnid.kotlin.assertthat.equalTo
 import org.jboss.resteasy.spi.ResteasyProviderFactory
 import org.junit.Test
 import java.time.Duration
@@ -36,8 +36,8 @@ class ResteasyAsyncTest {
     fun `passes normal response to client`() {
         withServer(SimpleResource) {
             httpClient.execute(HttpGet("/")).use { response ->
-                assertThat(response, Matcher(HttpResponse::isOk) and Matcher(HttpResponse::contentTypeIs, "text/plain"))
-                assertThat(response.bodyText(), equalTo("hello world"))
+                assertThat(response, Matcher(HttpResponse::isOk) and Matcher(HttpResponse::isPlainText))
+                assertThat(response.bodyText, equalTo("hello world"))
             }
         }
     }
@@ -55,8 +55,8 @@ class ResteasyAsyncTest {
     fun `provides Resteasy context data during execution`() {
         withServer(SimpleResource) {
             httpClient.execute(HttpGet("/using_context_data")).use { response ->
-                assertThat(response, Matcher(HttpResponse::isOk) and Matcher(HttpResponse::contentTypeIs, "text/plain"))
-                assertThat(response.bodyText(), equalTo("baseUri=$uri"))
+                assertThat(response, Matcher(HttpResponse::isOk) and Matcher(HttpResponse::isPlainText))
+                assertThat(response.bodyText, equalTo("baseUri=$uri"))
             }
         }
     }
@@ -77,8 +77,8 @@ class ResteasyAsyncTest {
         }
         withServer(ResourceWithThreadPool(threadPool)) {
             httpClient.execute(HttpGet("/")).use { response ->
-                assertThat(response, Matcher(HttpResponse::isOk) and Matcher(HttpResponse::contentTypeIs, "text/plain"))
-                assertThat(response.bodyText(), containsSubstring("TestServerWorker"))
+                assertThat(response, Matcher(HttpResponse::isOk) and Matcher(HttpResponse::isPlainText))
+                assertThat(response.bodyText, containsSubstring("TestServerWorker"))
             }
         }
     }
@@ -99,19 +99,21 @@ class ResteasyAsyncTest {
     fun `can specify additional coroutine context when responding`() {
         withServer(SimpleResource) {
             httpClient.execute(HttpGet("/specifying_coroutine_context")).use { response ->
-                assertThat(response, Matcher(HttpResponse::isOk) and Matcher(HttpResponse::contentTypeIs, "text/plain"))
-                assertThat(response.bodyText(), equalTo("CoroutineName=CoroutineName(test)"))
+                assertThat(response, Matcher(HttpResponse::isOk) and Matcher(HttpResponse::isPlainText))
+                assertThat(response.bodyText, equalTo("CoroutineName=CoroutineName(test)"))
             }
         }
     }
 }
 
-private fun HttpResponse.isOk(): Boolean = statusLine.statusCode in 200..299
-private fun HttpResponse.bodyText(): String = EntityUtils.toString(entity)
-private fun HttpResponse.contentTypeIs(mimeType: String): Boolean {
-    val contentType = ContentType.get(entity)
-    return contentType != null && contentType.mimeType.equals(mimeType, ignoreCase = true)
-}
+private val HttpResponse.isOk: Boolean get() = statusLine.statusCode in 200..299
+private val HttpResponse.bodyText: String get() = EntityUtils.toString(entity)
+private val HttpResponse.mimeType: String
+    get() {
+        val contentType = ContentType.get(entity)
+        return contentType.mimeType
+    }
+private val HttpResponse.isPlainText: Boolean get() = mimeType.equals("text/plain", ignoreCase = true)
 
 @Path("/")
 object SimpleResource {
