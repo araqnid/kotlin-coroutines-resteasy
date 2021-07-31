@@ -39,18 +39,20 @@ tasks {
 
 dependencies {
     api("org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.0_spec:1.0.1.Final")
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${LibraryVersions.kotlinCoroutines}")
-    implementation("org.jboss.resteasy:resteasy-jaxrs:${LibraryVersions.resteasy}")
+    api(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.3.3"))
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core")
+    implementation("org.jboss.resteasy:resteasy-jaxrs:3.1.4.Final")
     implementation(kotlin("stdlib-jdk8"))
     implementation(kotlin("reflect"))
     testImplementation(kotlin("test-junit"))
-    testImplementation("org.eclipse.jetty:jetty-server:${LibraryVersions.jetty}")
-    testImplementation("org.eclipse.jetty:jetty-servlet:${LibraryVersions.jetty}")
+    testImplementation(platform("org.eclipse.jetty:jetty-bom:9.4.26.v20200117"))
+    testImplementation("org.eclipse.jetty:jetty-server")
+    testImplementation("org.eclipse.jetty:jetty-servlet")
     testImplementation("org.apache.httpcomponents:httpclient:4.5.13")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${LibraryVersions.kotlinCoroutines}")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:${LibraryVersions.kotlinCoroutines}")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${LibraryVersions.kotlinCoroutines}")
-    testImplementation("org.araqnid.kotlin.assert-that:assert-that:${LibraryVersions.assertThat}")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
+    testImplementation("org.araqnid.kotlin.assert-that:assert-that:0.1.1")
 }
 
 publishing {
