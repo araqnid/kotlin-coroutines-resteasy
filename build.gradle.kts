@@ -1,7 +1,9 @@
+import java.net.URI
+
 plugins {
     kotlin("jvm") version "1.4.30"
     `maven-publish`
-    `java-library`
+    signing
 }
 
 val buildNumber: String? = System.getenv("BUILD_NUMBER")
@@ -14,21 +16,13 @@ if (buildNumber != null)
 
 repositories {
     mavenCentral()
-
-    if (isGithubUserAvailable(project)) {
-        for (repo in listOf("assert-that")) {
-            maven(url = "https://maven.pkg.github.com/araqnid/$repo") {
-                name = "github-$repo"
-                credentials(githubUserCredentials(project))
-            }
-        }
-    }
 }
 
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
     withSourcesJar()
+    withJavadocJar()
 }
 
 tasks {
@@ -63,17 +57,53 @@ dependencies {
 
 publishing {
     publications {
-        create<MavenPublication>("mavenJava") {
+        register<MavenPublication>("mavenJava") {
             from(components["java"])
+            pom {
+                name.set(project.name)
+                description.set(project.description)
+                licenses {
+                    license {
+                        name.set("Apache")
+                        url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                    }
+                }
+                url.set("https://github.com/araqnid/hamkrest-json")
+                issueManagement {
+                    system.set("Github")
+                    url.set("https://github.com/araqnid/hamkrest-json/issues")
+                }
+                scm {
+                    connection.set("https://github.com/araqnid/hamkrest-json.git")
+                    url.set("https://github.com/araqnid/hamkrest-json")
+                }
+                developers {
+                    developer {
+                        name.set("Steven Haslam")
+                        email.set("araqnid@gmail.com")
+                    }
+                }
+            }
         }
     }
 
     repositories {
-        if (isGithubUserAvailable(project)) {
-            maven(url = "https://maven.pkg.github.com/araqnid/kotlin-coroutines-resteasy") {
-                name = "github"
-                credentials(githubUserCredentials(project))
+        val sonatypeUser: String? by project
+        if (sonatypeUser != null) {
+            maven {
+                name = "OSSRH"
+                url = URI("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
+                val sonatypePassword: String by project
+                credentials {
+                    username = sonatypeUser
+                    password = sonatypePassword
+                }
             }
         }
     }
+}
+
+signing {
+    useGpgCmd()
+    sign(publishing.publications)
 }
