@@ -48,7 +48,7 @@ dependencies {
     testImplementation(kotlin("test-junit"))
     testImplementation("org.eclipse.jetty:jetty-server:${LibraryVersions.jetty}")
     testImplementation("org.eclipse.jetty:jetty-servlet:${LibraryVersions.jetty}")
-    testImplementation("org.apache.httpcomponents:httpclient:4.5.3")
+    testImplementation("org.apache.httpcomponents:httpclient:4.5.13")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:${LibraryVersions.kotlinCoroutines}")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:${LibraryVersions.kotlinCoroutines}")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${LibraryVersions.kotlinCoroutines}")
