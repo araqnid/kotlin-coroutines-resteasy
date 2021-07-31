@@ -7,12 +7,10 @@ plugins {
 }
 
 val buildNumber: String? = System.getenv("BUILD_NUMBER")
-val versionPrefix = "1.4"
 
-group = "org.araqnid"
-
-if (buildNumber != null)
-    version = "${versionPrefix}.${buildNumber}"
+group = "org.araqnid.kotlin.resteasy"
+version = "1.4.4"
+description = "Resteasy coroutine adapter"
 
 repositories {
     mavenCentral()
@@ -59,6 +57,7 @@ publishing {
     publications {
         register<MavenPublication>("mavenJava") {
             from(components["java"])
+            artifactId = "kotlin-coroutines-resteasy"
             pom {
                 name.set(project.name)
                 description.set(project.description)
@@ -68,14 +67,14 @@ publishing {
                         url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
                     }
                 }
-                url.set("https://github.com/araqnid/hamkrest-json")
+                url.set("https://github.com/araqnid/kotlin-coroutines-resteasy")
                 issueManagement {
                     system.set("Github")
-                    url.set("https://github.com/araqnid/hamkrest-json/issues")
+                    url.set("https://github.com/araqnid/kotlin-coroutines-resteasy/issues")
                 }
                 scm {
-                    connection.set("https://github.com/araqnid/hamkrest-json.git")
-                    url.set("https://github.com/araqnid/hamkrest-json")
+                    connection.set("https://github.com/araqnid/kotlin-coroutines-resteasy.git")
+                    url.set("https://github.com/araqnid/kotlin-coroutines-resteasy")
                 }
                 developers {
                     developer {
