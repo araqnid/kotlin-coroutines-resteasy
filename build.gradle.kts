@@ -39,7 +39,7 @@ tasks {
 
 dependencies {
     api("org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.0_spec:1.0.1.Final")
-    api(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.5.1"))
+    api(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.5.2"))
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core")
     implementation("org.jboss.resteasy:resteasy-jaxrs:3.1.4.Final")
     implementation(kotlin("stdlib-jdk8"))
