@@ -1,7 +1,7 @@
 import java.net.URI
 
 plugins {
-    kotlin("jvm") version "1.4.30"
+    kotlin("jvm") version "1.5.31"
     `maven-publish`
     signing
 }
