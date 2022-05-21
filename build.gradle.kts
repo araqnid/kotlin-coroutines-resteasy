@@ -1,7 +1,7 @@
 import java.net.URI
 
 plugins {
-    kotlin("jvm") version "1.4.30"
+    kotlin("jvm") version "1.6.21"
     `maven-publish`
     signing
 }
@@ -38,7 +38,7 @@ tasks {
 }
 
 dependencies {
-    api(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.5.1"))
+    api(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.6.1"))
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core")
     implementation(platform("org.jboss.resteasy:resteasy-bom:6.0.1.Final"))
     implementation("org.jboss.resteasy:resteasy-core")
