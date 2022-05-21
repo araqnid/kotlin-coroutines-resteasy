@@ -1,5 +1,7 @@
 package org.araqnid.kotlin.coroutines.resteasy
 
+import jakarta.servlet.DispatcherType
+import jakarta.servlet.ServletContextEvent
 import org.apache.http.HttpHost
 import org.apache.http.conn.routing.HttpRoute
 import org.apache.http.impl.client.CloseableHttpClient
@@ -14,9 +16,7 @@ import org.jboss.resteasy.plugins.server.servlet.Filter30Dispatcher
 import org.jboss.resteasy.plugins.server.servlet.ResteasyBootstrap
 import org.jboss.resteasy.spi.ResteasyDeployment
 import java.net.URI
-import java.util.EnumSet
-import javax.servlet.DispatcherType
-import javax.servlet.ServletContextEvent
+import java.util.*
 
 fun <T> withServer(vararg jaxrsResources: Any, block: ServerScope.() -> T): T {
     val server = Server().apply {

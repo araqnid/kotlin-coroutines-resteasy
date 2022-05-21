@@ -9,7 +9,7 @@ plugins {
 val buildNumber: String? = System.getenv("BUILD_NUMBER")
 
 group = "org.araqnid.kotlin.resteasy"
-version = "1.4.4"
+version = "1.5.0"
 description = "Resteasy coroutine adapter"
 
 repositories {
@@ -38,14 +38,14 @@ tasks {
 }
 
 dependencies {
-    api("org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.0_spec:1.0.1.Final")
     api(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.5.1"))
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core")
-    implementation("org.jboss.resteasy:resteasy-jaxrs:3.1.4.Final")
+    implementation(platform("org.jboss.resteasy:resteasy-bom:6.0.1.Final"))
+    implementation("org.jboss.resteasy:resteasy-core")
     implementation(kotlin("stdlib-jdk8"))
     implementation(kotlin("reflect"))
     testImplementation(kotlin("test-junit"))
-    testImplementation(platform("org.eclipse.jetty:jetty-bom:9.4.26.v20200117"))
+    testImplementation(platform("org.eclipse.jetty:jetty-bom:11.0.9"))
     testImplementation("org.eclipse.jetty:jetty-server")
     testImplementation("org.eclipse.jetty:jetty-servlet")
     testImplementation("org.apache.httpcomponents:httpclient:4.5.13")

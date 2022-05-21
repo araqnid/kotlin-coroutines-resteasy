@@ -12,5 +12,4 @@ updates:
       interval: "daily"
     ignore:
       - dependency-name: "jetty-bom"
-        versions:
-          - ">=10.x"
+        update-types: ["version-update:semver-major"]

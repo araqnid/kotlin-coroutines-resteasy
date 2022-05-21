@@ -1,9 +1,9 @@
 package org.araqnid.kotlin.coroutines.resteasy
 
+import jakarta.ws.rs.container.AsyncResponse
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import javax.ws.rs.container.AsyncResponse
 import kotlin.coroutines.CoroutineContext
 
 fun <T> CoroutineScope.respondAsynchronously(asyncResponse: AsyncResponse,
