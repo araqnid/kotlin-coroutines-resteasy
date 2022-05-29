@@ -19,7 +19,6 @@ import java.util.concurrent.BlockingQueue
 import java.util.concurrent.Executor
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
-import kotlin.coroutines.CoroutineContext
 import org.jboss.resteasy.core.ResteasyContext as RealResteasyContext
 
 class ResteasyAsyncTest {
@@ -70,8 +69,8 @@ class ResteasyAsyncTest {
         val threadPool = Executor { command ->
             Thread(command, "TestServerWorker").start()
         }
-        withServer(ResourceWithThreadPool(threadPool)) {
-            val response = execGET("/")
+        withServer(SimpleResource(CoroutineScope(threadPool.asCoroutineDispatcher()))) {
+            val response = execGET("/indicate_thread")
             assertThat(response, Matcher(HttpResponse<*>::isOk) and Matcher(HttpResponse<*>::isPlainText))
             assertThat(response.bodyText, containsSubstring("TestServerWorker"))
         }
@@ -131,6 +130,14 @@ class SimpleResource(private val scope: CoroutineScope) {
             "hello world"
         }
     }
+    @GET
+    @Path("indicate_thread")
+    @Produces("text/plain")
+    fun testResource(@Suspended asyncResponse: AsyncResponse) {
+        scope.respondAsynchronously(asyncResponse) {
+            "responding on ${Thread.currentThread().name}"
+        }
+    }
 
     @GET
     @Path("generate_204")
@@ -169,22 +176,6 @@ class SimpleResource(private val scope: CoroutineScope) {
 
     private inline fun <reified T : Any> resteasyContextData(): T {
         return RealResteasyContext.getContextData(T::class.java) as T
-    }
-}
-
-@Path("/")
-class ResourceWithThreadPool(private val threadPool: Executor) {
-    private val coroutineScope = object : CoroutineScope {
-        override val coroutineContext: CoroutineContext
-            get() = threadPool.asCoroutineDispatcher()
-    }
-
-    @GET
-    @Produces("text/plain")
-    fun testResource(@Suspended asyncResponse: AsyncResponse) {
-        coroutineScope.respondAsynchronously(asyncResponse) {
-            "responding on ${Thread.currentThread().name}"
-        }
     }
 }
 
