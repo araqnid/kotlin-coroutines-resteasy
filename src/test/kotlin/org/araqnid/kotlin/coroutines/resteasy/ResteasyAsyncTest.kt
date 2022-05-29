@@ -11,6 +11,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.future.await
 import org.araqnid.kotlin.assertthat.*
 import org.junit.Test
+import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
@@ -22,6 +23,14 @@ import kotlin.coroutines.CoroutineContext
 import org.jboss.resteasy.core.ResteasyContext as RealResteasyContext
 
 class ResteasyAsyncTest {
+    private val httpClient = HttpClient.newHttpClient()
+
+    private suspend fun ServerScope.execGET(path: String): HttpResponse<String> {
+        require(path.startsWith("/"))
+        val request = HttpRequest.newBuilder(uri.resolve(path)).build()
+        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString()).await()
+    }
+
     @Test
     fun `passes normal response to client`() = runBlocking {
         withServer(SimpleResource(this)) {
@@ -90,12 +99,6 @@ class ResteasyAsyncTest {
             assertThat(response.bodyText, equalTo("CoroutineName=CoroutineName(test)"))
         }
     }
-}
-
-private suspend fun ServerScope.execGET(path: String): HttpResponse<String> {
-    require(path.startsWith("/"))
-    val request = HttpRequest.newBuilder(uri.resolve(path)).build()
-    return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString()).await()
 }
 
 private fun hasStatus(statusCode: Int): Matcher<HttpResponse<*>> {

@@ -12,7 +12,6 @@ import org.jboss.resteasy.plugins.server.servlet.Filter30Dispatcher
 import org.jboss.resteasy.plugins.server.servlet.ResteasyBootstrap
 import org.jboss.resteasy.spi.ResteasyDeployment
 import java.net.URI
-import java.net.http.HttpClient
 import java.util.*
 
 suspend fun <T> withServer(vararg jaxrsResources: Any, block: suspend ServerScope.() -> T): T {
@@ -40,10 +39,10 @@ suspend fun <T> withServer(vararg jaxrsResources: Any, block: suspend ServerScop
     server.start()
     val port = (server.connectors[0] as NetworkConnector).localPort
     try {
-        return block(ServerScope(URI("http://localhost:$port/"), HttpClient.newHttpClient()))
+        return block(ServerScope(URI("http://localhost:$port/")))
     } finally {
         server.stop()
     }
 }
 
-data class ServerScope(val uri: URI, val httpClient: HttpClient)
+data class ServerScope(val uri: URI)
