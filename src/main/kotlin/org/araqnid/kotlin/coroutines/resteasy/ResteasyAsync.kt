@@ -4,6 +4,7 @@ import jakarta.ws.rs.container.AsyncResponse
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import java.util.concurrent.CancellationException
 import kotlin.coroutines.CoroutineContext
 
 fun <T> CoroutineScope.respondAsynchronously(asyncResponse: AsyncResponse,
@@ -16,6 +17,6 @@ fun <T> CoroutineScope.respondAsynchronously(asyncResponse: AsyncResponse,
             asyncResponse.resume(e)
         }
     }.also { job ->
-        asyncResponse.setTimeoutHandler { job.cancel() }
+        asyncResponse.setTimeoutHandler { job.cancel(CancellationException("Response timeout")) }
     }
 }
