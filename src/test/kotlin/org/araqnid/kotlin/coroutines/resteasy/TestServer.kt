@@ -2,10 +2,6 @@ package org.araqnid.kotlin.coroutines.resteasy
 
 import jakarta.servlet.DispatcherType
 import jakarta.servlet.ServletContextEvent
-import org.apache.http.HttpHost
-import org.apache.http.conn.routing.HttpRoute
-import org.apache.http.impl.client.CloseableHttpClient
-import org.apache.http.impl.client.HttpClients
 import org.eclipse.jetty.server.NetworkConnector
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.server.ServerConnector
@@ -16,9 +12,10 @@ import org.jboss.resteasy.plugins.server.servlet.Filter30Dispatcher
 import org.jboss.resteasy.plugins.server.servlet.ResteasyBootstrap
 import org.jboss.resteasy.spi.ResteasyDeployment
 import java.net.URI
+import java.net.http.HttpClient
 import java.util.*
 
-fun <T> withServer(vararg jaxrsResources: Any, block: ServerScope.() -> T): T {
+suspend fun <T> withServer(vararg jaxrsResources: Any, block: suspend ServerScope.() -> T): T {
     val server = Server().apply {
         addConnector(ServerConnector(this).apply {
             port = 0
@@ -42,20 +39,11 @@ fun <T> withServer(vararg jaxrsResources: Any, block: ServerScope.() -> T): T {
 
     server.start()
     val port = (server.connectors[0] as NetworkConnector).localPort
-    val host = HttpHost("localhost", port)
     try {
-        HttpClients.custom()
-                .setRoutePlanner { requestedHost, _, _ ->
-                    require(requestedHost == null || requestedHost == host)
-                    HttpRoute(host)
-                }
-                .build().use { httpClient ->
-            return block(ServerScope(URI("http://localhost:$port/"),
-                    httpClient))
-        }
+        return block(ServerScope(URI("http://localhost:$port/"), HttpClient.newHttpClient()))
     } finally {
         server.stop()
     }
 }
 
-data class ServerScope(val uri: URI, val httpClient: CloseableHttpClient)
+data class ServerScope(val uri: URI, val httpClient: HttpClient)

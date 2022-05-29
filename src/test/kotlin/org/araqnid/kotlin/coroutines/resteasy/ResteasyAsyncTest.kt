@@ -8,12 +8,11 @@ import jakarta.ws.rs.container.AsyncResponse
 import jakarta.ws.rs.container.Suspended
 import jakarta.ws.rs.core.UriInfo
 import kotlinx.coroutines.*
-import org.apache.http.HttpResponse
-import org.apache.http.client.methods.HttpGet
-import org.apache.http.entity.ContentType
-import org.apache.http.util.EntityUtils
+import kotlinx.coroutines.future.await
 import org.araqnid.kotlin.assertthat.*
 import org.junit.Test
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
 import java.time.Duration
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.Executor
@@ -24,62 +23,59 @@ import org.jboss.resteasy.core.ResteasyContext as RealResteasyContext
 
 class ResteasyAsyncTest {
     @Test
-    fun `passes normal response to client`() {
-        withServer(SimpleResource) {
-            httpClient.execute(HttpGet("/")).use { response ->
-                assertThat(response, Matcher(HttpResponse::isOk) and Matcher(HttpResponse::isPlainText))
-                assertThat(response.bodyText, equalTo("hello world"))
-            }
+    fun `passes normal response to client`() = runBlocking {
+        withServer(SimpleResource(this)) {
+            val response = execGET("/")
+            assertThat(response, Matcher(HttpResponse<*>::isOk) and Matcher(HttpResponse<*>::isPlainText))
+            assertThat(response.bodyText, equalTo("hello world"))
         }
     }
 
     @Test
-    fun `converts Unit response to 204`() {
-        withServer(SimpleResource) {
-            httpClient.execute(HttpGet("/generate_204")).use { response ->
-                assertThat(response.statusLine.statusCode, equalTo(204))
-            }
+    fun `converts Unit response to 204`() = runBlocking {
+        withServer(SimpleResource(this)) {
+            val response = execGET("/generate_204")
+            assertThat(response, hasStatus(204))
         }
     }
 
     @Test
-    fun `provides Resteasy context data during execution`() {
-        withServer(SimpleResource) {
-            httpClient.execute(HttpGet("/using_context_data")).use { response ->
-                assertThat(response, Matcher(HttpResponse::isOk) and Matcher(HttpResponse::isPlainText))
-                assertThat(response.bodyText, equalTo("baseUri=$uri"))
-            }
+    fun `provides Resteasy context data during execution`() = runBlocking {
+        withServer(SimpleResource(this)) {
+            val response = execGET("/using_context_data")
+            assertThat(response, Matcher(HttpResponse<*>::isOk) and Matcher(HttpResponse<*>::isPlainText))
+            assertThat(response.bodyText, equalTo("baseUri=$uri"))
         }
     }
 
     @Test
-    fun `passes exception response to client`() {
-        withServer(SimpleResource) {
-            httpClient.execute(HttpGet("/generate_400")).use { response ->
-                assertThat(response.statusLine.statusCode, equalTo(400))
-            }
+    fun `passes exception response to client`() = runBlocking {
+        withServer(SimpleResource(this)) {
+            val response = execGET("/generate_400")
+            assertThat(response, hasStatus(400))
         }
     }
 
     @Test
-    fun `uses given thread pool to respond`() {
+    fun `uses given thread pool to respond`() = runBlocking {
         val threadPool = Executor { command ->
             Thread(command, "TestServerWorker").start()
         }
         withServer(ResourceWithThreadPool(threadPool)) {
-            httpClient.execute(HttpGet("/")).use { response ->
-                assertThat(response, Matcher(HttpResponse::isOk) and Matcher(HttpResponse::isPlainText))
-                assertThat(response.bodyText, containsSubstring("TestServerWorker"))
-            }
+            val response = execGET("/")
+            assertThat(response, Matcher(HttpResponse<*>::isOk) and Matcher(HttpResponse<*>::isPlainText))
+            assertThat(response.bodyText, containsSubstring("TestServerWorker"))
         }
     }
 
     @Test
     fun `coroutine cancelled after timeout`() {
-        val resource = ResourceWithSlowMethod()
-        withServer(resource) {
-            httpClient.execute(HttpGet("/slow")).use { response ->
-                assertThat(response.statusLine.statusCode, greaterThan(500) or equalTo(500))
+        val resource = runBlocking {
+            ResourceWithSlowMethod(this).also { resource ->
+                withServer(resource) {
+                    val response = execGET("/slow")
+                    assertThat(response, hasStatus(greaterThan(500) or equalTo(500)))
+                }
             }
         }
         val job = resource.jobs.take()
@@ -87,31 +83,47 @@ class ResteasyAsyncTest {
     }
 
     @Test
-    fun `can specify additional coroutine context when responding`() {
-        withServer(SimpleResource) {
-            httpClient.execute(HttpGet("/specifying_coroutine_context")).use { response ->
-                assertThat(response, Matcher(HttpResponse::isOk) and Matcher(HttpResponse::isPlainText))
-                assertThat(response.bodyText, equalTo("CoroutineName=CoroutineName(test)"))
-            }
+    fun `can specify additional coroutine context when responding`() = runBlocking {
+        withServer(SimpleResource(this)) {
+            val response = execGET("/specifying_coroutine_context")
+            assertThat(response, Matcher(HttpResponse<*>::isOk) and Matcher(HttpResponse<*>::isPlainText))
+            assertThat(response.bodyText, equalTo("CoroutineName=CoroutineName(test)"))
         }
     }
 }
 
-private val HttpResponse.isOk: Boolean get() = statusLine.statusCode in 200..299
-private val HttpResponse.bodyText: String get() = EntityUtils.toString(entity)
-private val HttpResponse.mimeType: String
-    get() {
-        val contentType = ContentType.get(entity)
-        return contentType.mimeType
-    }
-private val HttpResponse.isPlainText: Boolean get() = mimeType.equals("text/plain", ignoreCase = true)
+private suspend fun ServerScope.execGET(path: String): HttpResponse<String> {
+    require(path.startsWith("/"))
+    val request = HttpRequest.newBuilder(uri.resolve(path)).build()
+    return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString()).await()
+}
+
+private fun hasStatus(statusCode: Int): Matcher<HttpResponse<*>> {
+    return has("statusCode", { it.statusCode() }, equalTo(statusCode))
+}
+
+private fun hasStatus(statusCodeMatcher: Matcher<Int>): Matcher<HttpResponse<*>> {
+    return has("statusCode", { it.statusCode() }, statusCodeMatcher)
+}
+
+private val HttpResponse<*>.isOk: Boolean get() = statusCode() in 200..299
+private val HttpResponse<String>.bodyText: String get() = body()
+private val HttpResponse<*>.mimeType: String?
+    get() = headers().firstValue("Content-Type").map {  value ->
+        val pos = value.indexOf(';')
+        if (pos > 0)
+            value.substring(0 until pos)
+        else
+            value
+    }.orElse(null)
+private val HttpResponse<*>.isPlainText: Boolean get() = mimeType.equals("text/plain", ignoreCase = true)
 
 @Path("/")
-object SimpleResource {
+class SimpleResource(private val scope: CoroutineScope) {
     @GET
     @Produces("text/plain")
     fun respond(@Suspended asyncResponse: AsyncResponse) {
-        GlobalScope.respondAsynchronously(asyncResponse) {
+        scope.respondAsynchronously(asyncResponse) {
             delay(50)
             "hello world"
         }
@@ -120,7 +132,7 @@ object SimpleResource {
     @GET
     @Path("generate_204")
     fun responseWithNoContent(@Suspended asyncResponse: AsyncResponse) {
-        GlobalScope.respondAsynchronously(asyncResponse) {
+        scope.respondAsynchronously(asyncResponse) {
             delay(50)
         }
     }
@@ -129,7 +141,7 @@ object SimpleResource {
     @Path("generate_400")
     @Produces("text/plain")
     fun respondWithException(@Suspended asyncResponse: AsyncResponse) {
-        GlobalScope.respondAsynchronously(asyncResponse) {
+        scope.respondAsynchronously(asyncResponse) {
             throw BadRequestException()
         }
     }
@@ -138,7 +150,7 @@ object SimpleResource {
     @Path("using_context_data")
     @Produces("text/plain")
     fun respondUsingContextData(@Suspended asyncResponse: AsyncResponse) {
-        GlobalScope.respondAsynchronously(asyncResponse) {
+        scope.respondAsynchronously(asyncResponse) {
             "baseUri=${resteasyContextData<UriInfo>().baseUri}"
         }
     }
@@ -147,7 +159,7 @@ object SimpleResource {
     @Path("specifying_coroutine_context")
     @Produces("text/plain")
     fun respondUsingSpecifiedCoroutineContext(@Suspended asyncResponse: AsyncResponse) {
-        GlobalScope.respondAsynchronously(asyncResponse, context = CoroutineName("test")) {
+        scope.respondAsynchronously(asyncResponse, context = CoroutineName("test")) {
             "CoroutineName=${coroutineContext[CoroutineName]}"
         }
     }
@@ -174,7 +186,7 @@ class ResourceWithThreadPool(private val threadPool: Executor) {
 }
 
 @Path("/")
-class ResourceWithSlowMethod {
+class ResourceWithSlowMethod(private val scope: CoroutineScope) {
     val jobs: BlockingQueue<Job> = LinkedBlockingQueue()
 
     @GET
@@ -183,7 +195,7 @@ class ResourceWithSlowMethod {
     fun respondSlowly(@Suspended asyncResponse: AsyncResponse) {
         val baseline = Duration.ofMillis(500)
         asyncResponse.setTimeout(baseline)
-        val job = GlobalScope.respondAsynchronously(asyncResponse) {
+        val job = scope.respondAsynchronously(asyncResponse) {
             delay(baseline * 3)
         }
         jobs += job
