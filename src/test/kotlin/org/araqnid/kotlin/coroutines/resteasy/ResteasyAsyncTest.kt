@@ -15,9 +15,8 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
-import java.util.concurrent.BlockingQueue
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executor
-import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 import org.jboss.resteasy.core.ResteasyContext as RealResteasyContext
 
@@ -77,16 +76,13 @@ class ResteasyAsyncTest {
     }
 
     @Test
-    fun `coroutine cancelled after timeout`() {
-        val resource = runBlocking {
-            ResourceWithSlowMethod(this).also { resource ->
-                withServer(resource) {
-                    val response = execGET("/slow")
-                    assertThat(response, hasStatus(greaterThan(500) or equalTo(500)))
-                }
-            }
+    fun `coroutine cancelled after timeout`() = runBlocking {
+        val resource = ResourceWithSlowMethod(this)
+        withServer(resource) {
+            val response = execGET("/slow")
+            assertThat(response, hasStatus(greaterThan(500) or equalTo(500)))
         }
-        val job = resource.jobs.take()
+        val job = resource.jobs.first()
         assertThat(job, Matcher(Job::isCancelled))
     }
 
@@ -181,7 +177,7 @@ class SimpleResource(private val scope: CoroutineScope) {
 
 @Path("/")
 class ResourceWithSlowMethod(private val scope: CoroutineScope) {
-    val jobs: BlockingQueue<Job> = LinkedBlockingQueue()
+    val jobs: MutableList<Job> = CopyOnWriteArrayList()
 
     @GET
     @Path("slow")
