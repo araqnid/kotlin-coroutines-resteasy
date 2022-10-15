@@ -40,7 +40,7 @@ tasks {
 dependencies {
     api(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.6.1"))
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core")
-    implementation(platform("org.jboss.resteasy:resteasy-bom:6.0.1.Final"))
+    implementation(platform("org.jboss.resteasy:resteasy-bom:6.2.1.Final"))
     implementation("org.jboss.resteasy:resteasy-core")
     implementation(kotlin("stdlib-jdk8"))
     implementation(kotlin("reflect"))
