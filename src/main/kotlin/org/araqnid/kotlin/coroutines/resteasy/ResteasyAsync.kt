@@ -6,9 +6,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.concurrent.CancellationException
 import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 
 fun <T> CoroutineScope.respondAsynchronously(asyncResponse: AsyncResponse,
-                                             context: CoroutineContext = coroutineContext,
+                                             context: CoroutineContext = EmptyCoroutineContext,
                                              block: suspend CoroutineScope.() -> T): Job {
     return launch(context + ResteasyContext()) {
         try {
