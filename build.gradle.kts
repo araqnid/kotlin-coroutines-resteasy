@@ -45,7 +45,7 @@ dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation(kotlin("reflect"))
     testImplementation(kotlin("test-junit"))
-    testImplementation(platform("org.eclipse.jetty:jetty-bom:11.0.9"))
+    testImplementation(platform("org.eclipse.jetty:jetty-bom:11.0.14"))
     testImplementation("org.eclipse.jetty:jetty-server")
     testImplementation("org.eclipse.jetty:jetty-servlet")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
